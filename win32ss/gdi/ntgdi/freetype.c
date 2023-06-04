@@ -1971,25 +1971,36 @@ IntEnableFontRendering(BOOL Enable)
     g_RenderingEnabled = Enable;
 }
 
+/* FIXME: Implement subpixel rendering */
 FT_Render_Mode FASTCALL
 IntGetFontRenderMode(LOGFONTW *logfont)
 {
     switch (logfont->lfQuality)
     {
-    case ANTIALIASED_QUALITY:
+    case DEFAULT_QUALITY:
+    case DRAFT_QUALITY:
+    case PROOF_QUALITY:
         break;
     case NONANTIALIASED_QUALITY:
         return FT_RENDER_MODE_MONO;
-    case DRAFT_QUALITY:
-        return FT_RENDER_MODE_LIGHT;
+    case ANTIALIASED_QUALITY:
+        return FT_RENDER_MODE_NORMAL;
     case CLEARTYPE_QUALITY:
-        if (!gspv.bFontSmoothing)
-            break;
-        if (!gspv.uiFontSmoothingType)
-            break;
-        return FT_RENDER_MODE_LCD;
+        /* return FT_RENDER_MODE_LCD; */
+        return FT_RENDER_MODE_NORMAL;
     }
-    return FT_RENDER_MODE_NORMAL;
+
+    if (gspv.bFontSmoothing)
+    {
+        /*
+        if (gspv.uiFontSmoothingType && gspv.uiFontSmoothingType != FE_FONTSMOOTHINGSTANDARD)
+        {
+            return FT_RENDER_MODE_LCD;
+        }
+        */
+        return FT_RENDER_MODE_NORMAL;
+    }
+    return FT_RENDER_MODE_MONO;
 }
 
 
