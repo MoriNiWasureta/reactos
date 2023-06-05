@@ -4578,8 +4578,8 @@ ftGdiGetTextMetricsW(
     PTEXTOBJ TextObj;
     PFONTGDI FontGDI;
     FT_Face Face;
-    TT_OS2 *pOS2;
-    TT_HoriHeader *pHori;
+    TT_OS2 *pOS2 = NULL;
+    TT_HoriHeader *pHori = NULL;
     FT_WinFNT_HeaderRec Win;
     ULONG Error;
     NTSTATUS Status = STATUS_SUCCESS;
@@ -4623,23 +4623,26 @@ ftGdiGetTextMetricsW(
             Status = STATUS_SUCCESS;
 
             IntLockFreeType();
-            pOS2 = FT_Get_Sfnt_Table(Face, ft_sfnt_os2);
-            if (NULL == pOS2)
-            {
-                DPRINT1("Can't find OS/2 table - not TT font?\n");
-                Status = STATUS_INTERNAL_ERROR;
-            }
-
-            pHori = FT_Get_Sfnt_Table(Face, ft_sfnt_hhea);
-            if (NULL == pHori)
-            {
-                DPRINT1("Can't find HHEA table - not TT font?\n");
-                Status = STATUS_INTERNAL_ERROR;
-            }
 
             Error = FT_Get_WinFNT_Header(Face, &Win);
+            if (Error)
+            {
+                pOS2 = FT_Get_Sfnt_Table(Face, ft_sfnt_os2);
+                if (pOS2 == NULL)
+                {
+                    DPRINT1("Can't find OS/2 table - not TT font?\n");
+                    Status = STATUS_INTERNAL_ERROR;
+                }
 
-            if (NT_SUCCESS(Status) || !Error)
+                pHori = FT_Get_Sfnt_Table(Face, ft_sfnt_hhea);
+                if (pHori == NULL)
+                {
+                    DPRINT1("Can't find HHEA table - not TT font?\n");
+                    Status = STATUS_INTERNAL_ERROR;
+                }
+            }
+
+            if (Status == STATUS_SUCCESS)
             {
                 FillTM(&ptmwi->TextMetric, FontGDI, pOS2, pHori, !Error ? &Win : 0);
 
